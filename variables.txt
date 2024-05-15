@@ -1,0 +1,15 @@
+For each participant:
+
+    For each trial:
+        - tree: a dictionary or an adjacency list.
+        - rewards: a list of rewards at each node.
+        
+        For each timestep:
+    
+            - current fixation node: an one-hot coded array. dim = num_node.
+            - child nodes of current fixation node: one-hot coded arrays. dim = num_node.
+            - parent node of current fixation onde: an one-hot coded array. dim = num_node.
+            - reward of current fixation node: a float.
+            - stage: a bool variable. 0 for fixation stage and 1 for decision stage.
+            - action: an one-hot coded array. dim = 2 * num_node + 1.
+                note: num_node fixation actions + num_node decision actions + 1 stage transition action.

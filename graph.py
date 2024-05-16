@@ -89,7 +89,7 @@ class Graph:
 
     def transition(self, start_node, move):
         """
-        World model giving prediction: (s, a) -> (s')
+        World model giving prediction: (s, a) -> (s', r)
         """
 
         # no change if starting from a leaf node

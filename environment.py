@@ -128,10 +128,11 @@ class DecisionTreeEnv(gym.Env):
                 # raise ValueError('Execute fixation action in decision stage.')
                 pass
 
-            # decision action
+            # decision actionf
             elif action_type == 1:
                 # move fixation to the node
                 self.fixation_node = action_node
+                done=True 
             
             # stage switch action (debugging use)
             elif action_type == 2:
@@ -143,8 +144,8 @@ class DecisionTreeEnv(gym.Env):
                 reward = 1.
 
         # end a trial
-        if (self.stage == 1 and self.fixation_node in self.graph.leaf_nodes) or self.timer == self.t_max:
-            done = True
+        #if (self.stage == 1 and self.fixation_node in self.graph.leaf_nodes) or self.timer == self.t_max:
+        #    done = True
 
         # get parent and child nodes
         fixation_parent_node = self.graph.predecessors(self.fixation_node)

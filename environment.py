@@ -22,7 +22,6 @@ class DecisionTreeEnv(gym.Env):
             num_node,
             t_max = 100,
             shuffle_nodes = True,
-            shuffle_edges = True,
         ):
         """
         Construct an environment.
@@ -31,7 +30,6 @@ class DecisionTreeEnv(gym.Env):
         self.t_max = t_max
         self.num_node = num_node
         self.shuffle_nodes = shuffle_nodes
-        self.shuffle_edges = shuffle_edges
         self.reward_set = np.array([-8, -4, -2, -1, 1, 2, 4, 8])
 
         # initialize graph
@@ -185,7 +183,7 @@ class DecisionTreeEnv(gym.Env):
         self.stage = 0
 
         # initialize the tree
-        self.graph.reset(shuffle_edges = self.shuffle_edges, shuffle_nodes = self.shuffle_nodes)
+        self.graph.reset(shuffle_nodes = self.shuffle_nodes)
 
         # initialize fixation record
         self.init_record()

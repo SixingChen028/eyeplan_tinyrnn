@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import random
 import networkx as nx
 
 
@@ -18,7 +19,7 @@ class Graph:
         self.reward_set = reward_set
         
 
-    def reset(self, shuffle_nodes = True, shuffle_edges = True):
+    def reset(self, shuffle_nodes = True):
         """
         Reset the graph.
         """
@@ -28,29 +29,25 @@ class Graph:
         if shuffle_nodes:
             self.nodes = np.random.permutation(self.nodes)
         
-        # initialize child node dict
+        # initialize leaf nodes and child node dict
+        self.leaf_nodes = np.array([self.nodes[0]])
         self.child_dict = {}
-        for node_idx in np.arange(self.num_node, step = 2)[:-1]:
-            if shuffle_edges:
-                if node_idx == 0:
-                    parent_idx = node_idx
-                elif node_idx > 0:
-                    parent_idx = np.random.choice([node_idx, node_idx - 1])
-            else:
-                parent_idx = node_idx
+        for idx in np.arange(1, self.num_node, step = 2):
+            children = self.nodes[idx : idx + 2] # pick children
+            parent = random.choice(self.leaf_nodes) # randomly pick a parent
+            self.child_dict[parent] = children.tolist() # set children
 
-            child_idx = [node_idx + 1, node_idx + 2]
-
-            self.child_dict[self.nodes[parent_idx]] = [self.nodes[child_idx[0]], self.nodes[child_idx[1]]]
+            # update leaf nodes
+            self.leaf_nodes = np.delete(self.leaf_nodes, np.where(np.isin(self.leaf_nodes, parent))[0]) # remove parent from leaves
+            self.leaf_nodes = np.append(self.leaf_nodes, children) # add children to leaves
 
         # initialize parent node dict
         self.parent_dict = {v: k for k, values in self.child_dict.items() for v in values}
 
-        # get root node, leaf and non-leaf nodes
+        # get root node and non-leaf nodes
         self.root_node = self.nodes[0]
         self.non_leaf_nodes = np.array(list(self.child_dict.keys()))
-        self.leaf_nodes = np.delete(self.nodes, np.where(np.isin(self.nodes, self.non_leaf_nodes))[0])
-        
+
         # get node counts
         self.num_leaf = len(self.leaf_nodes)
         self.num_non_leaf = len(self.non_leaf_nodes)
@@ -142,7 +139,7 @@ class Graph:
                 self.adj_matrix[node, child] = 1
         
         return self.adj_matrix
-
+    
 
 if __name__ == '__main__':
     # testing

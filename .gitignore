@@ -1,1 +1,3 @@
 *.npy 
+cached_data/*
+__pycache__/*

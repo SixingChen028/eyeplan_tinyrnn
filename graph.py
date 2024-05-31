@@ -4,6 +4,11 @@ import random
 import networkx as nx
 
 
+def get_nx_graph(graph):
+    mat=graph.get_adj_matrix()
+    return nx.from_numpy_array(mat,create_using=nx.DiGraph())
+
+    
 class Graph:
     """
     A graph class.
@@ -139,6 +144,10 @@ class Graph:
                 self.adj_matrix[node, child] = 1
         
         return self.adj_matrix
+    
+
+    
+
     
 
 if __name__ == '__main__':

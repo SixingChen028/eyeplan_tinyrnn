@@ -6,6 +6,7 @@ import torch.nn as nn
 import time 
 from torch.utils.data import DataLoader,random_split 
 import torch.optim as optim
+import sys 
 
 def mse_loss(input, target, ignored_index=-1234, reduction='mean'):
     mask = target != ignored_index    
@@ -21,7 +22,7 @@ def train(model,device,optimizer,epoch,train_loader,log_interval=10):
     model.train()
     model.to(device)
     weights_actions=torch.tensor([0.1,0.1,0.1,0.1,1.0,1.0]).float().cuda()
-    policy_loss_fn=nn.CrossEntropyLoss(ignore_index=-1234)
+    policy_loss_fn=nn.CrossEntropyLoss(weight=weights_actions,ignore_index=-1234)
     value_loss_fn=mse_loss
     for batch_idx,batch_data in enumerate(train_loader):
         start_time = time.time()
@@ -91,38 +92,42 @@ def test(model,device,epoch,test_loader,log_interval=10):
     return np.mean(all_acc) 
 
 if __name__=='__main__':
+    n_rollouts=int(sys.argv[1])
+    only_generate=int(sys.argv[2]) 
     lr=5e-4
-    num_epochs=5
+    num_epochs=15
     num_nodes=7
     size=9 
     batch_size=256
     log_interval=100
     log.info("Importing dataset...")
     
-    train_data=SupervisedTrajectoryDataset(num_train_nodes=[7,11],num_test_nodes=9,n_train_traj=1000000,n_test_traj=1000,train=True,strat_class=RolloutStrategy)
-    test_data=SupervisedTrajectoryDataset(num_train_nodes=[7,11],num_test_nodes=9,n_train_traj=1000000,n_test_traj=1000,train=False,strat_class=RolloutStrategy)
-    if torch.cuda.is_available():
-        device=torch.device('cuda:0')
-    else:
-        device=torch.device('cpu')
-    #device=torch.device('cpu')
-    
-    model=TinyRNN(input_size=train_data.obs_size,num_actions=train_data.num_actions)
-    optimizer = optim.Adam(model.parameters(), lr=lr)
+    train_data=SupervisedTrajectoryDataset(num_train_nodes=[7,11],num_test_nodes=9,n_train_traj=1000000,n_test_traj=1000,train=True,strat_class=RolloutStrategy,n_rollouts=n_rollouts)
+    test_data=SupervisedTrajectoryDataset(num_train_nodes=[7,11],num_test_nodes=9,n_train_traj=1000000,n_test_traj=1000,train=False,strat_class=RolloutStrategy,n_rollouts=n_rollouts)
 
-    log.info("Start Training...")
-    for i in range(num_epochs):
-        epoch=i+1 
-        train_loader=DataLoader(train_data,batch_size,shuffle=True,collate_fn=PadSequence())
-        test_loader=DataLoader(test_data,batch_size,shuffle=True,collate_fn=PadSequence())
-        train(model,device,optimizer,epoch,train_loader,log_interval=log_interval)
-        test(model,device,epoch,test_loader,log_interval=log_interval)
-        log.info("Saving Model...")
-        torch.save(model.state_dict(),'models/6_dim_rollout_model_epoch_{}.pt'.format(epoch))
+    if only_generate==0:
+        if torch.cuda.is_available():
+            device=torch.device('cuda:0')
+        else:
+            device=torch.device('cpu')
+        #device=torch.device('cpu')
+        
+        model=TinyRNN(input_size=train_data.obs_size,num_actions=train_data.num_actions)
+        optimizer = optim.Adam(model.parameters(), lr=lr)
+
+        log.info("Start Training...")
+        for i in range(num_epochs):
+            epoch=i+1 
+            train_loader=DataLoader(train_data,batch_size,shuffle=True,collate_fn=PadSequence())
+            test_loader=DataLoader(test_data,batch_size,shuffle=True,collate_fn=PadSequence())
+            train(model,device,optimizer,epoch,train_loader,log_interval=log_interval)
+            test(model,device,epoch,test_loader,log_interval=log_interval)
+            log.info("Saving Model...")
+            torch.save(model.state_dict(),'models/6_dim_{}_rollout_model_epoch_{}.pt'.format(n_rollouts,epoch))
 
 
 
-    
+        
 
 
 

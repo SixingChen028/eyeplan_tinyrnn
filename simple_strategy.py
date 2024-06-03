@@ -103,15 +103,46 @@ class RolloutStrategy():
         self.n_nodes=self.env.num_node 
         self.reduced_action_space=[]
         self.num_rollouts=num_rollouts
+        if self.n_nodes==11:
+            max_len=9
+        elif self.n_nodes==7:
+            max_len=7
+        elif self.n_nodes==9:
+            max_len=8 
+        self.max_length=np.random.choice(list(range(1,max_len)))
 
     def select_action_symbolic_space(self,obs,info):
         inds=[self.n_nodes*i for i in range(1,6)]
         for _ in range(3):
             inds.append(inds[-1]+1)
         fixation_onehot,fixation_parent_onehot,fixation_left_child_onehot,fixation_right_child_onehot,root_node_onehot,fixation_reward,timer,stage=np.split(obs,inds)[:-1]
+        
+        if timer>=self.max_length and self.info_gathering_stage==0:
+            if self.rolling_out=='left' and np.sum(fixation_parent_onehot)>0: 
+                self.value_buffer.append(fixation_reward)
+                self.left_value.append(np.sum(self.value_buffer))
+                #print(self.value_buffer,self.left_value,self.right_value)
+                info_dict={'value_buffer':np.array(self.value_buffer),'left_value':self.left_value,'right_value':self.right_value,'info_gathering_stage':self.info_gathering_stage}
+                self.value_buffer=[]
+            elif self.rolling_out=='right' and np.sum(fixation_parent_onehot)>0:
+                self.value_buffer.append(fixation_reward)
+                self.right_value.append(np.sum(self.value_buffer))
+                #print(self.value_buffer,self.left_value,self.right_value)
+                info_dict={'value_buffer':np.array(self.value_buffer),'left_value':self.left_value,'right_value':self.right_value,'info_gathering_stage':self.info_gathering_stage}
+                self.value_buffer=[]
+            else:
+                #print(self.value_buffer,self.left_value,self.right_value)
+                info_dict={'value_buffer':np.array(self.value_buffer),'left_value':self.left_value,'right_value':self.right_value,'info_gathering_stage':self.info_gathering_stage}
+            self.info_gathering_stage=1
+            action=SymbolicActionSpace.SWITCH_PLAN 
+            return action,info_dict 
+    
+        
         if self.info_gathering_stage==0:
             if self.rolling_out is None:
                 self.rolling_out='left'
+            
+            
             
             if np.sum(fixation_parent_onehot)<1: #at the root. 
                 self.value_buffer.append(fixation_reward)
@@ -164,8 +195,17 @@ class RolloutStrategy():
                     return action,info_dict 
                 
         if self.info_gathering_stage==1:
-            assert self.left_value is not None and self.right_value is not None 
-            if goodmean(self.right_value)>goodmean(self.left_value):
+            
+            assert len(self.left_value)>0 
+            self.left_value=self.left_value[0]
+
+            if len(self.right_value)==0:
+                cond_right=self.left_value<0
+            else:
+                self.right_value=self.right_value[0]
+                cond_right=self.right_value>self.left_value
+
+            if cond_right:
                 #action=self.n_nodes+np.argmax(fixation_right_child_onehot)
                 action=SymbolicActionSpace.PHYSICAL_RIGHT
                 info_dict={'value_buffer':np.array(self.value_buffer),'left_value':self.left_value,'right_value':self.right_value,'info_gathering_stage':self.info_gathering_stage}
@@ -184,5 +224,4 @@ class RolloutStrategy():
         action,info_dict=self.select_action_symbolic_space(obs,info)
         symbolic_action=action_dict[action]
         env_action_space=[np.argmax(fixation_left_child_onehot),np.argmax(fixation_right_child_onehot),np.argmax(root_node_onehot),self.n_nodes*2,self.n_nodes+np.argmax(fixation_left_child_onehot),self.n_nodes+np.argmax(fixation_right_child_onehot)]
-        return symbolic_action,env_action_space[symbolic_action],info_dict
-    
+        return symbolic_action,env_action_space[symbolic_action],info_dict 

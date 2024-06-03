@@ -7,15 +7,18 @@ from tqdm import tqdm
 
 
 class SupervisedTrajectoryDataset(Dataset):
-    def __init__(self,num_train_nodes=[7,11],num_test_nodes=9,strat_class=SimpleStrategy,train=True,n_train_traj=1000000,n_test_traj=1000):
+    def __init__(self,num_train_nodes=[7,11],num_test_nodes=9,strat_class=SimpleStrategy,train=True,n_train_traj=1000000,n_test_traj=1000,n_rollouts=2):
         self.num_train_nodes=num_train_nodes
         self.num_test_nodes=num_test_nodes 
         self.size=max(self.num_train_nodes)
         self.strategy_class=strat_class
         assert self.size>=self.num_test_nodes  
+        self.n_rollouts=n_rollouts
         self.num_actions=len(action_dict.keys())
-        fname='cached_data/cached_trajectories_train_nodes_{}_test_nodes_{}_strategy_{}_train_values.npy'.format(str(self.num_train_nodes),self.num_test_nodes,self.strategy_class.__name__)
-        fname2='cached_data/cached_trajectories_train_nodes_{}_test_nodes_{}_strategy_{}_test_values.npy'.format(str(self.num_train_nodes),self.num_test_nodes,self.strategy_class.__name__)
+        #fname='cached_data/cached_trajectories_train_nodes_{}_test_nodes_{}_strategy_{}_num_rollouts_{}_train.npy'.format(str(self.num_train_nodes),self.num_test_nodes,self.strategy_class.__name__,self.n_rollouts)
+        #fname2='cached_data/cached_trajectories_train_nodes_{}_test_nodes_{}_strategy_{}_num_rollouts_{}_test.npy'.format(str(self.num_train_nodes),self.num_test_nodes,self.strategy_class.__name__,self.n_rollouts)
+        fname='cached_data/cached_trajectories_train_nodes_[7, 11]_test_nodes_9_strategy_RolloutStrategy_num_rollouts_2_train_prob.npy'
+        fname2='cached_data/cached_trajectories_train_nodes_[7, 11]_test_nodes_9_strategy_RolloutStrategy_num_rollouts_2_test_prob.npy'
         if os.path.exists(fname):
             self.train_trajectories=np.load(fname,allow_pickle=True)
         else:
@@ -57,7 +60,7 @@ class SupervisedTrajectoryDataset(Dataset):
         actions=[]
         values=[]
         env.reset()
-        strategy=self.strategy_class(env)
+        strategy=self.strategy_class(env,num_rollouts=self.n_rollouts)
         obs,info=env.reset()
         done=False 
         while done==False:

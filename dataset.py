@@ -55,7 +55,7 @@ class SupervisedTrajectoryDataset(Dataset):
         else:
             self.trajectories=self.test_trajectories
     
-    def sample_trajectory(self,env):
+    def sample_trajectory(self,env): 
         observations=[]
         actions=[]
         values=[]
@@ -65,22 +65,23 @@ class SupervisedTrajectoryDataset(Dataset):
         done=False 
         while done==False:
             symbolic_action,env_action,info2=strategy.select_action(obs,info)
-            obs=self.wrap_observation(obs,env.num_node)
-            observations.append(obs)
-            actions.append(symbolic_action)
-            l_value=info2['left_value']
-            if l_value is None:
-                l_value=0.0
-            elif isinstance(l_value,list):
-                l_value=goodmean(l_value)
-            r_value=info2['right_value']
-            if r_value is None:
-                r_value=0.0
-            elif isinstance(r_value,list):
-                r_value=goodmean(r_value)
-            assert isinstance(l_value,float)
-            assert isinstance(r_value,float)
-            values.append([l_value,r_value])
+            if symbolic_action!=3: #Ignore switch_plan action  
+                obs=self.wrap_observation(obs,env.num_node)
+                observations.append(obs)
+                actions.append(symbolic_action)
+                l_value=info2['left_value']
+                if l_value is None:
+                    l_value=0.0
+                elif isinstance(l_value,list):
+                    l_value=goodmean(l_value)
+                r_value=info2['right_value']
+                if r_value is None:
+                    r_value=0.0
+                elif isinstance(r_value,list):
+                    r_value=goodmean(r_value)
+                assert isinstance(l_value,float)
+                assert isinstance(r_value,float)
+                values.append([l_value,r_value])
             obs, reward, done, _, info=env.step(env_action)
         return np.asarray(observations),np.asarray(actions),np.asarray(values)
 

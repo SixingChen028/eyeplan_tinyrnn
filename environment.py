@@ -117,7 +117,7 @@ class DecisionTreeEnv(gym.Env):
                 self.stage = 1
 
                 # reset fixation to root node
-                self.fixation_node = self.graph.root_node
+                #self.fixation_node = self.graph.root_node
 
         # decision stage
         elif self.stage == 1:
